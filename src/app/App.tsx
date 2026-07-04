@@ -487,15 +487,15 @@ function SidebarContent({ onHire }: { onHire: () => void }) {
   return (
     <>
       {/* Avatar + name */}
-      <div className="flex items-center gap-4">
-        <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 border" style={{ borderColor: "#2a2a30" }}>
+      <div className="flex flex-col items-start gap-4">
+        <div className="w-32 h-32 rounded-full overflow-hidden flex-shrink-0 border-2" style={{ borderColor: "#2a2a30" }}>
           <ImageWithFallback src={profilePhoto} alt="Rudra"
             className="w-full h-full object-cover" style={{ objectPosition: "center 8%" }} />
         </div>
         <div>
           <div className="flex items-center gap-1.5 mb-1">
-            <h1 className="text-lg font-extrabold leading-tight outfit">Rudra</h1>
-            <VerifiedBadge size={17} />
+            <h1 className="text-2xl font-extrabold leading-tight outfit">Rudra</h1>
+            <VerifiedBadge size={19} />
           </div>
           <div className="flex items-center gap-1.5">
             <LiveDot />
@@ -598,15 +598,15 @@ export default function App() {
         <div className="lg:hidden" style={{ background: "#111113", borderBottom: "1px solid #2a2a30" }}>
 
           {/* Top row: photo + name + hire */}
-          <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-            <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 border" style={{ borderColor: "#2a2a30" }}>
+          <div className="flex items-center gap-4 px-4 pt-4 pb-3">
+            <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0 border-2" style={{ borderColor: "#2a2a30" }}>
               <ImageWithFallback src={profilePhoto} alt="Rudra"
                 className="w-full h-full object-cover" style={{ objectPosition: "center 8%" }} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-base font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>Rudra</span>
-                <VerifiedBadge size={14} />
+                <span className="text-lg font-extrabold" style={{ fontFamily: "'Outfit', sans-serif" }}>Rudra</span>
+                <VerifiedBadge size={15} />
               </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <div className="flex items-center gap-1.5">

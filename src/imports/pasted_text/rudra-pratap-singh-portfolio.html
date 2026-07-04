@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rudra Pratap Singh — Video Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #121212;
+    --panel: #1a1a1a;
+    --panel-2: #1f1f1f;
+    --line: #2a2a2a;
+    --text: #f2f0ec;
+    --muted: #9a9a9a;
+    --accent: #ff4b3e;      /* tally-light red, nod to a REC indicator */
+    --accent-dim: #ff4b3e33;
+    --live: #34d399;
+    --radius: 14px;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3, .display{
+    font-family:'Space Grotesk', sans-serif;
+  }
+  .mono{ font-family:'JetBrains Mono', monospace; letter-spacing:0.02em; }
+
+  a{ color:inherit; text-decoration:none; }
+  button{ font-family:inherit; cursor:pointer; }
+
+  /* ---------- layout ---------- */
+  .app{
+    display:grid;
+    grid-template-columns: 340px 1fr;
+    min-height:100vh;
+  }
+  @media (max-width: 900px){
+    .app{ grid-template-columns: 1fr; }
+  }
+
+  /* ---------- sidebar ---------- */
+  .sidebar{
+    background:var(--panel);
+    border-right:1px solid var(--line);
+    padding:40px 32px;
+    position:sticky;
+    top:0;
+    height:100vh;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:28px;
+  }
+  @media (max-width: 900px){
+    .sidebar{ position:relative; height:auto; border-right:none; border-bottom:1px solid var(--line); }
+  }
+  /* film-perforation accent along the sidebar edge */
+  .sidebar::before{
+    content:"";
+    position:absolute;
+    left:0; top:0; bottom:0; width:6px;
+    background-image: radial-gradient(circle, var(--line) 2px, transparent 2.5px);
+    background-size: 100% 22px;
+    background-repeat: repeat-y;
+    opacity:.6;
+  }
+
+  .avatar{
+    width:104px; height:104px;
+    border-radius:50%;
+    object-fit:cover;
+    border:1px solid var(--line);
+  }
+
+  .name-row{ display:flex; align-items:center; gap:8px; }
+  .name-row h1{ font-size:28px; font-weight:700; line-height:1.15; margin:0; }
+  .verified{ color:var(--accent); flex-shrink:0; }
+
+  .bio{ color:var(--muted); font-size:14.5px; line-height:1.6; margin:0; }
+
+  .meta-row{ display:flex; align-items:center; gap:8px; color:var(--muted); font-size:14px; }
+  .meta-row svg{ flex-shrink:0; }
+
+  .avail{ display:flex; align-items:center; gap:8px; font-size:14px; }
+  .live-dot{
+    width:8px; height:8px; border-radius:50%; background:var(--live);
+    box-shadow:0 0 0 0 rgba(52,211,153,.6);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(52,211,153,.5); }
+    70%{ box-shadow:0 0 0 7px rgba(52,211,153,0); }
+    100%{ box-shadow:0 0 0 0 rgba(52,211,153,0); }
+  }
+
+  .btn{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%;
+    padding:13px 16px;
+    border-radius:10px;
+    font-size:14.5px; font-weight:600;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    color:var(--text);
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .btn:hover{ border-color:var(--accent); transform:translateY(-1px); }
+  .btn.primary{
+    background:var(--text);
+    color:#111;
+    border:none;
+  }
+  .btn.primary:hover{ background:#fff; }
+
+  .field-label{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+    margin-bottom:10px;
+    display:block;
+  }
+  .pill-group{ display:flex; flex-wrap:wrap; gap:8px; }
+  .pill{
+    padding:7px 13px;
+    border-radius:8px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    font-size:13.5px;
+    color:var(--text);
+    display:flex; align-items:center; gap:6px;
+  }
+
+  .sidebar-block{ display:flex; flex-direction:column; gap:14px; }
+  .divider{ height:1px; background:var(--line); border:none; margin:2px 0; }
+
+  /* ---------- main ---------- */
+  .main{ padding:48px 56px 80px; }
+  @media (max-width: 900px){ .main{ padding:32px 20px 60px; } }
+
+  .section-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:22px; }
+  .section-head h2{ font-size:34px; margin:0; }
+  .section-head .count{ color:var(--muted); font-size:14px; }
+
+  .tabs{
+    display:flex; flex-wrap:wrap; gap:10px;
+    margin-bottom:28px;
+  }
+  .tab{
+    padding:9px 16px;
+    border-radius:9px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    font-size:13.5px; font-weight:500;
+    color:var(--muted);
+    display:flex; align-items:center; gap:8px;
+    transition: all .15s ease;
+  }
+  .tab .count-badge{
+    background:#000; color:var(--text);
+    font-size:11px; padding:1px 7px; border-radius:5px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .tab.active{
+    color:var(--text);
+    border-color:var(--accent);
+    background: linear-gradient(180deg, var(--accent-dim), transparent);
+  }
+  .tab.active .count-badge{ background:var(--accent); color:#fff; }
+  .tab:hover{ color:var(--text); }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:20px;
+  }
+  @media (max-width: 1100px){ .grid{ grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 600px){ .grid{ grid-template-columns: 1fr; } }
+
+  .grid.long-form .card{ aspect-ratio: 16/9; }
+  .grid.short-form .card{ aspect-ratio: 9/16; }
+
+  .card{
+    position:relative;
+    border-radius:var(--radius);
+    overflow:hidden;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    cursor:pointer;
+    isolation:isolate;
+  }
+  .card img{
+    width:100%; height:100%; object-fit:cover;
+    display:block;
+    transition: transform .5s cubic-bezier(.2,.8,.2,1);
+  }
+  .card:hover img{ transform: scale(1.05); }
+
+  .card::after{
+    content:"";
+    position:absolute; inset:0;
+    background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,.65) 100%);
+    pointer-events:none;
+  }
+  .card .play{
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:52px; height:52px;
+    border-radius:50%;
+    background:rgba(18,18,18,.55);
+    border:1px solid rgba(255,255,255,.35);
+    display:flex; align-items:center; justify-content:center;
+    backdrop-filter: blur(3px);
+    z-index:2;
+    transition: transform .2s ease, background .2s ease;
+  }
+  .card:hover .play{ transform:translate(-50%,-50%) scale(1.08); background:var(--accent); border-color:var(--accent); }
+  .card .play svg{ margin-left:3px; }
+
+  .card .tag{
+    position:absolute; left:12px; bottom:12px; z-index:2;
+    font-size:12px; font-weight:600; color:#fff;
+    background:rgba(0,0,0,.45);
+    padding:4px 9px; border-radius:6px;
+    letter-spacing:.02em;
+  }
+
+  /* ---------- contact ---------- */
+  .contact{
+    margin-top:64px;
+    padding-top:40px;
+    border-top:1px solid var(--line);
+  }
+  .contact h2{ font-size:32px; margin:0 0 26px; }
+  .contact-list{ display:flex; flex-direction:column; gap:20px; max-width:420px; }
+  .contact-item{ display:flex; align-items:center; gap:14px; }
+  .contact-icon{
+    width:44px; height:44px; border-radius:50%;
+    background:var(--panel-2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .contact-item a{ font-weight:600; font-size:15.5px; }
+  .contact-item a:hover{ color:var(--accent); }
+
+  /* ---------- modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,.82);
+    display:none; align-items:center; justify-content:center;
+    z-index:100; padding:24px;
+  }
+  .modal-backdrop.open{ display:flex; }
+  .modal-box{
+    width:100%; max-width:860px;
+    background:#000;
+    border-radius:12px;
+    overflow:hidden;
+    position:relative;
+    border:1px solid var(--line);
+  }
+  .modal-box .frame-wrap{ position:relative; width:100%; padding-top:56.25%; }
+  .modal-box.vertical .frame-wrap{ padding-top:177.7%; max-width:420px; margin:0 auto; }
+  .modal-box iframe{
+    position:absolute; inset:0; width:100%; height:100%; border:0;
+  }
+  .modal-close{
+    position:absolute; top:-44px; right:0;
+    background:transparent; border:none; color:#fff;
+    font-size:15px; display:flex; align-items:center; gap:6px;
+    opacity:.8;
+  }
+  .modal-close:hover{ opacity:1; }
+
+  .empty-note{
+    color:var(--muted); font-size:13.5px; text-align:center; padding:14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <img class="avatar" src="rudra.jpg" alt="Rudra Pratap Singh">
+
+    <div class="sidebar-block">
+      <div class="name-row">
+        <h1>Rudra Pratap Singh</h1>
+        <svg class="verified" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 2.1 3.1-.4 1 3 2.9 1.3-.6 3.1 1.9 2.5-1.9 2.5.6 3.1-2.9 1.3-1 3-3.1-.4L12 22l-2.4-2.1-3.1.4-1-3-2.9-1.3.6-3.1L1.3 12l1.9-2.5-.6-3.1 2.9-1.3 1-3 3.1.4L12 2z" stroke="currentColor" stroke-width="1.4"/><path d="M8.5 12.2l2.3 2.3 4.7-4.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <p class="bio">I'm Rudra, a video editor & filmmaker with 1 year of experience. I blend creative editing, sound, and motion graphics to craft visual stories that make audiences feel, think, and remember.</p>
+
+      <div class="meta-row">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 22s7-7.4 7-12.5A7 7 0 0 0 5 9.5C5 14.6 12 22 12 22z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="9.5" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+        India
+      </div>
+      <div class="avail"><span class="live-dot"></span> Available for work</div>
+    </div>
+
+    <button class="btn primary" onclick="location.href='#contact'">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Hire Me
+    </button>
+
+    <hr class="divider">
+
+    <div class="sidebar-block">
+      <span class="field-label">Video editing niches</span>
+      <div class="pill-group">
+        <span class="pill">Podcasts</span>
+        <span class="pill">Real Estate</span>
+        <span class="pill">Vlogs</span>
+        <span class="pill">Product Reviews</span>
+      </div>
+    </div>
+
+    <div class="sidebar-block">
+      <span class="field-label">Speaks</span>
+      <div class="pill-group">
+        <span class="pill">English</span>
+        <span class="pill">Hindi</span>
+      </div>
+    </div>
+
+    <div class="sidebar-block">
+      <span class="field-label">Software</span>
+      <div class="pill-group">
+        <span class="pill">Premiere Pro</span>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <button class="btn" onclick="location.href='#contact'">Like my work? Contact me!</button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <section id="short-form-section">
+      <div class="section-head">
+        <h2>Short-Form</h2>
+        <span class="count" id="short-count"></span>
+      </div>
+      <div class="tabs" id="short-tabs"></div>
+      <div class="grid short-form" id="short-grid"></div>
+    </section>
+
+    <section style="margin-top:64px;">
+      <div class="section-head">
+        <h2>Long-Form</h2>
+        <span class="count" id="long-count"></span>
+      </div>
+      <div class="tabs" id="long-tabs"></div>
+      <div class="grid long-form" id="long-grid"></div>
+    </section>
+
+    <section id="contact" class="contact">
+      <h2>Contact Me</h2>
+      <div class="contact-list">
+        <div class="contact-item">
+          <span class="contact-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M3 6h18v12H3V6z" stroke="currentColor" stroke-width="1.6"/><path d="M3 7l9 6 9-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <a href="mailto:your-email@gmail.com">your-email@gmail.com</a>
+        </div>
+        <div class="contact-item">
+          <span class="contact-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor"/></svg>
+          </span>
+          <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal-box" id="modalBox">
+    <button class="modal-close" id="modalClose">✕ Close</button>
+    <div class="frame-wrap" id="frameWrap"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   EDIT YOUR VIDEOS HERE.
+   embed: paste the Vimeo/YouTube EMBED url (not the normal link)
+     Vimeo:   https://player.vimeo.com/video/XXXXXXXXX
+     YouTube: https://www.youtube.com/embed/XXXXXXXXXXX
+   thumb: a thumbnail image url (Vimeo/YouTube give you one, or
+          use your own screenshot)
+   orientation: "vertical" for shorts/reels, "horizontal" for long-form
+============================================================ */
+
+const shortForm = [
+  { category: "AI",          title: "AI Concept Edit",      thumb: "https://images.unsplash.com/photo-1655720033654-a4239dd42d70?q=80&w=800&auto=format&fit=crop", embed: "" },
+  { category: "Fitness",     title: "Fitness Reel",         thumb: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=800&auto=format&fit=crop", embed: "" },
+  { category: "Tech Reviews",title: "Tech Review Short",    thumb: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=800&auto=format&fit=crop", embed: "" },
+  { category: "Vlogs",       title: "Daily Vlog",           thumb: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=800&auto=format&fit=crop", embed: "" },
+  { category: "Motivational",title: "Motivational Short",   thumb: "https://images.unsplash.com/photo-1490730141103-6cac525144f4?q=80&w=800&auto=format&fit=crop", embed: "" },
+];
+
+const longForm = [
+  { category: "Showreel",      title: "Showreel 2026",          thumb: "https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=1200&auto=format&fit=crop", embed: "" },
+  { category: "Documentaries", title: "The Manhattan Project",   thumb: "https://images.unsplash.com/photo-1580927752452-89d86da3fa0a?q=80&w=1200&auto=format&fit=crop", embed: "" },
+  { category: "Commentary",    title: "Commentary Video",        thumb: "https://images.unsplash.com/photo-1590650046871-92c887180603?q=80&w=1200&auto=format&fit=crop", embed: "" },
+  { category: "Educational",   title: "Educational Explainer",   thumb: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop", embed: "" },
+  { category: "Interviews",    title: "Interview — Studio",      thumb: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?q=80&w=1200&auto=format&fit=crop", embed: "" },
+  { category: "Interviews",    title: "Interview — Cathedral",    thumb: "https://images.unsplash.com/photo-1541447271487-09612b3f49f7?q=80&w=1200&auto=format&fit=crop", embed: "" },
+];
+
+function uniqueCats(list){
+  const counts = {};
+  list.forEach(v => counts[v.category] = (counts[v.category]||0)+1);
+  return counts;
+}
+
+function renderTabs(containerId, list, onFilter){
+  const counts = uniqueCats(list);
+  const el = document.getElementById(containerId);
+  el.innerHTML = "";
+  const allTab = makeTab("All", list.length, true);
+  allTab.onclick = () => selectTab(allTab, () => onFilter(null));
+  el.appendChild(allTab);
+  Object.entries(counts).forEach(([cat,count]) => {
+    const t = makeTab(cat, count, false);
+    t.onclick = () => selectTab(t, () => onFilter(cat));
+    el.appendChild(t);
+  });
+
+  function selectTab(tabEl, cb){
+    [...el.children].forEach(c => c.classList.remove("active"));
+    tabEl.classList.add("active");
+    cb();
+  }
+}
+
+function makeTab(label, count, active){
+  const d = document.createElement("div");
+  d.className = "tab" + (active ? " active" : "");
+  d.innerHTML = `${label} <span class="count-badge">${count}</span>`;
+  return d;
+}
+
+function renderGrid(gridId, list, orientation){
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = "";
+  if(list.length === 0){
+    grid.innerHTML = `<div class="empty-note">Nothing in this category yet.</div>`;
+    return;
+  }
+  list.forEach(v => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <img src="${v.thumb}" alt="${v.title}" loading="lazy">
+      <span class="play">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M6 4l14 8-14 8V4z"/></svg>
+      </span>
+      <span class="tag">${v.category}</span>
+    `;
+    card.onclick = () => openModal(v, orientation);
+    grid.appendChild(card);
+  });
+}
+
+function openModal(v, orientation){
+  const modal = document.getElementById("modal");
+  const box = document.getElementById("modalBox");
+  const wrap = document.getElementById("frameWrap");
+  box.classList.toggle("vertical", orientation === "vertical");
+
+  if(v.embed && v.embed.trim() !== ""){
+    wrap.innerHTML = `<iframe src="${v.embed}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+  } else {
+    wrap.innerHTML = `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9a9a9a;font-size:14px;text-align:center;padding:20px;">
+        No embed link added yet for "${v.title}".<br>Add a Vimeo/YouTube embed URL in the video data.
+      </div>`;
+  }
+  modal.classList.add("open");
+}
+
+document.getElementById("modalClose").onclick = closeModal;
+document.getElementById("modal").addEventListener("click", (e) => {
+  if(e.target.id === "modal") closeModal();
+});
+function closeModal(){
+  document.getElementById("modal").classList.remove("open");
+  document.getElementById("frameWrap").innerHTML = "";
+}
+
+// init
+document.getElementById("short-count").textContent = shortForm.length + " videos";
+document.getElementById("long-count").textContent = longForm.length + " videos";
+
+renderTabs("short-tabs", shortForm, (cat) => {
+  renderGrid("short-grid", cat ? shortForm.filter(v=>v.category===cat) : shortForm, "vertical");
+});
+renderTabs("long-tabs", longForm, (cat) => {
+  renderGrid("long-grid", cat ? longForm.filter(v=>v.category===cat) : longForm, "horizontal");
+});
+
+renderGrid("short-grid", shortForm, "vertical");
+renderGrid("long-grid", longForm, "horizontal");
+</script>
+
+</body>
+</html>
